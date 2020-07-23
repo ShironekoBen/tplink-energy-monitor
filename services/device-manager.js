@@ -24,18 +24,18 @@ Object.keys(interfaces)
 function registerPlug(plug) {
   
   if (plug.supportsEmeter) {
-    console.log('Found device with energy monitor support: ' + plug.alias + ' [' + plug.deviceId + ']');
+    console.log('Found device with energy monitor support: ' + plug.alias + ' [' + plug.id + ']');
     devices.push(plug);
     dataLogger.startLogging(plug);
   } else {
-    console.log('Skipping device: ' + plug.alias + ' [' + plug.deviceId + ']. Energy monitoring not supported.');
+    console.log('Skipping device: ' + plug.alias + ' [' + plug.id + ']. Energy monitoring not supported.');
   }
   
 }
 
-module.exports.getDevice = function(deviceId) {
+module.exports.getDevice = function(plugId) {
 
-  return devices.find(d => d.deviceId == deviceId);
+  return devices.find(d => d.id == plugId);
 
 }
 

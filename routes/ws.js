@@ -14,15 +14,15 @@ router.ws('/', function(ws, req) {
 
     // Latest data is always pushed out to clients, but clients can also request cached data at any time.
     if(message.requestType === 'getCachedData') {
-      let deviceId = message.deviceId;
-      let cachedData = dataFetcher.getCachedData(deviceId);
+      let plugId = message.plugId;
+      let cachedData = dataFetcher.getCachedData(plugId);
       
-      ws.send(dataBroadcaster.generatePayload('realtimeUsage', deviceId, cachedData.realtimeUsage));
-      ws.send(dataBroadcaster.generatePayload('dailyUsage', deviceId, cachedData.dailyUsage));
-      ws.send(dataBroadcaster.generatePayload('monthlyUsage', deviceId, cachedData.monthlyUsage));
-      ws.send(dataBroadcaster.generatePayload('powerState', deviceId, cachedData.powerState));
-      dataLogger.getLogEntriesForDevice(deviceId, (loggedData) => {
-        ws.send(dataBroadcaster.generatePayload('loggedData', deviceId, loggedData));
+      ws.send(dataBroadcaster.generatePayload('realtimeUsage', plugId, cachedData.realtimeUsage));
+      ws.send(dataBroadcaster.generatePayload('dailyUsage', plugId, cachedData.dailyUsage));
+      ws.send(dataBroadcaster.generatePayload('monthlyUsage', plugId, cachedData.monthlyUsage));
+      ws.send(dataBroadcaster.generatePayload('powerState', plugId, cachedData.powerState));
+      dataLogger.getLogEntriesForDevice(plugId, (loggedData) => {
+        ws.send(dataBroadcaster.generatePayload('loggedData', plugId, loggedData));
       });
       
     }

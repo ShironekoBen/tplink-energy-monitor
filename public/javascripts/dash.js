@@ -1,5 +1,5 @@
 var dash = {
-  deviceId: null,
+  plugId: null,
 
   realtimeGauge: null,
   realtimeTrendChart: null,
@@ -9,11 +9,11 @@ var dash = {
   monthlyUsageChart: null,
   usageLogChart: null,
 
-  init: function(deviceId) {
-    this.deviceId = deviceId;
+  init: function(plugId) {
+    this.plugId = plugId;
 
-    if (this.deviceId) {
-      $('.' + deviceId).addClass('active');
+    if (this.plugId) {
+      $('.' + plugId).addClass('active');
     }
 
     this.initRealtimeGauge();
@@ -34,7 +34,7 @@ var dash = {
       ws.send(JSON.stringify(
         {
           requestType: 'getCachedData',
-          deviceId: dash.deviceId
+          plugId: dash.plugId
         }
       ));
     }
@@ -50,7 +50,7 @@ var dash = {
 
   wsMessageHandler: function(messageEvent) {
     let message = JSON.parse(messageEvent.data);
-    if(message.deviceId === dash.deviceId) {
+    if(message.plugId === dash.plugId) {
       if(message.dataType === 'realtimeUsage') {
         dash.refreshRealtimeDisplay(message.data);
       }

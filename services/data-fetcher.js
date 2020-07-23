@@ -23,13 +23,13 @@ function fetchRealtimeUsage() {
 
     deviceManager.getAllDevices().forEach(device => {
 
-      let deviceId = device.deviceId;
+      let plugId = device.id;
       device.emeter.getRealtime().then(response => {
 
         response.voltage = normaliseVoltage(response, device);  
-        updateCache(cachedRealtimeUsageData, deviceId, response);
+        updateCache(cachedRealtimeUsageData, plugId, response);
 
-        dataBroadcaster.broadcastRealtimeUsageUpdate(deviceId, response);
+        dataBroadcaster.broadcastRealtimeUsageUpdate(plugId, response);
       });
 
     });
@@ -51,7 +51,7 @@ function fetchDailyUsage() {
     // Month + 1 as the API months are index 1 based.
     deviceManager.getAllDevices().forEach(device => {
 
-      let deviceId = device.deviceId;
+      let plugId = device.id;
       device.emeter.getDayStats(currentMoment.year(), currentMoment.month() +1).then(currentPeriodStats => {
 
         // Check if we also need the previous month to meet the required total number of samples
@@ -66,9 +66,9 @@ function fetchDailyUsage() {
     
             let result = trimStatResults(combinedStats, totalDaysRequired);
     
-            updateCache(cachedDailyUsageData, deviceId, result);
+            updateCache(cachedDailyUsageData, plugId, result);
             
-            dataBroadcaster.broadcastDailyUsageUpdate(deviceId, result);
+            dataBroadcaster.broadcastDailyUsageUpdate(plugId, result);
     
           });
         }
@@ -76,9 +76,9 @@ function fetchDailyUsage() {
           let dayStats = fillMissingDays(currentPeriodStats, currentMoment);
       
           let result = trimStatResults(dayStats, totalDaysRequired);
-          updateCache(cachedDailyUsageData, deviceId, result);
+          updateCache(cachedDailyUsageData, plugId, result);
     
-          dataBroadcaster.broadcastDailyUsageUpdate(deviceId, result);
+          dataBroadcaster.broadcastDailyUsageUpdate(plugId, result);
         }
     
       });
@@ -101,7 +101,7 @@ function fetchMonthlyUsage() {
 
     deviceManager.getAllDevices().forEach(device => {
 
-      let deviceId = device.deviceId;
+      let plugId = device.id;
       device.emeter.getMonthStats(currentMoment.year()).then(currentPeriodStats => {
 
         // Check if we also need the previous year to meet the required total number of samples
@@ -116,9 +116,9 @@ function fetchMonthlyUsage() {
     
             let result = trimStatResults(combinedStats, totalMonthsRequired);
     
-            updateCache(cachedMonthlyUsageData, deviceId, result);
+            updateCache(cachedMonthlyUsageData, plugId, result);
     
-            dataBroadcaster.broadcastMonthlyUsageUpdate(deviceId, result);
+            dataBroadcaster.broadcastMonthlyUsageUpdate(plugId, result);
     
           });
         }
@@ -127,9 +127,9 @@ function fetchMonthlyUsage() {
     
           let result = trimStatResults(monthStats, totalMonthsRequired);
     
-          updateCache(cachedMonthlyUsageData, deviceId, result);
+          updateCache(cachedMonthlyUsageData, plugId, result);
 
-          dataBroadcaster.broadcastMonthlyUsageUpdate(deviceId, result);
+          dataBroadcaster.broadcastMonthlyUsageUpdate(plugId, result);
         }
     
       });
@@ -147,17 +147,36 @@ function fetchPowerState() {
 
     deviceManager.getAllDevices().forEach(device => {
 
-      let deviceId = device.deviceId;
+      let plugId = device.id;
       device.getSysInfo().then(response => {
+        let powerState = -1;
 
-        let powerState = {
-          isOn: (response.relay_state === 1),
-          uptime: response.on_time
-        };
+        if (response.deviceId == plugId) {
+          // Regular single-plug device, where deviceId == plugId
+          powerState = {
+            isOn: (response.relay_state === 1),
+            uptime: response.on_time
+          };
+        } else {
+          // Multi-plug device, need to examine the children
+          response.children.forEach(child => {
+            if (child.id == plugId) {
+              powerState = {
+                isOn: (child.state === 1),
+                uptime: child.on_time
+              };
+            }
+          });
+        }
+
+        if (powerState == -1) {
+          console.log("Failed to get power state for device " + plugId);
+          powerState = 0;
+        }
     
-        updateCache(cachedPowerState, deviceId, powerState);
+        updateCache(cachedPowerState, plugId, powerState);
 
-        dataBroadcaster.broadcastPowerStateUpdate(deviceId, powerState);
+        dataBroadcaster.broadcastPowerStateUpdate(plugId, powerState);
       });
     });
 
@@ -237,8 +256,8 @@ function trimStatResults(stats, maxSamples) {
   return stats.splice(stats.length - maxSamples, stats.length);
 }
 
-function getCachedData(cache, deviceId) {
-  let cacheEntry = cache.find(d => d.deviceId == deviceId);
+function getCachedData(cache, plugId) {
+  let cacheEntry = cache.find(d => d.plugId == plugId);
   if(cacheEntry === undefined) {
     return cacheEntry;
   }
@@ -247,13 +266,13 @@ function getCachedData(cache, deviceId) {
   }
 }
 
-function updateCache(cache, deviceId, data) {
+function updateCache(cache, plugId, data) {
 
-  let cachedData = cache.find(d => d.deviceId == deviceId);
+  let cachedData = cache.find(d => d.plugId == plugId);
 
   if(cachedData === undefined) {
     cache.push({
-      deviceId: deviceId,
+      plugId: plugId,
       data: data
     });
   }
@@ -278,12 +297,12 @@ function normaliseVoltage(response, device) {
   }
 }
 
-module.exports.getCachedData = function(deviceId) {
+module.exports.getCachedData = function(plugId) {
 
   return {
-    realtimeUsage: getCachedData(cachedRealtimeUsageData, deviceId),
-    dailyUsage: getCachedData(cachedDailyUsageData, deviceId),
-    monthlyUsage: getCachedData(cachedMonthlyUsageData, deviceId),
-    powerState: getCachedData(cachedPowerState, deviceId)
+    realtimeUsage: getCachedData(cachedRealtimeUsageData, plugId),
+    dailyUsage: getCachedData(cachedDailyUsageData, plugId),
+    monthlyUsage: getCachedData(cachedMonthlyUsageData, plugId),
+    powerState: getCachedData(cachedPowerState, plugId)
   }
 }

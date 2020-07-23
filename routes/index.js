@@ -8,21 +8,21 @@ router.get('/', function(req, res, next) {
   let devices = sortDevices(deviceManager.getAllDevices());
 
   if (devices && devices.length > 0) {
-    let deviceId = devices[0].deviceId;
+    let plugId = devices[0].id;
 
-    res.redirect('/' + deviceId);
+    res.redirect('/' + plugId);
   } else {
     res.render('index', {});
   }
 
 });
 
-router.get('/:deviceId', function(req, res, next) {
+router.get('/:plugId', function(req, res, next) {
 
-  let deviceId = req.params.deviceId;
+  let plugId = req.params.plugId;
 
   res.render('index', {
-    device: deviceManager.getDevice(deviceId),
+    device: deviceManager.getDevice(plugId),
     devices: sortDevices(deviceManager.getAllDevices())
   });
 

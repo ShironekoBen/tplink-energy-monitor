@@ -39,7 +39,7 @@ function loadLogConfig() {
 
 function startLogging(device) {
   setInterval(() => { log(device); }, logIntervalMs);
-  console.log('Logging started for ' + device.alias + ' [' + device.deviceId + '] every ' + (logIntervalMs/1000) + ' seconds');
+  console.log('Logging started for ' + device.alias + ' [' + device.id + '] every ' + (logIntervalMs/1000) + ' seconds');
 }
 
 function writeLog(filePath, log) {
@@ -48,7 +48,7 @@ function writeLog(filePath, log) {
     fs.writeFileSync(filePath, JSON.stringify(log), { flag: 'w' });
   }
   catch (err) {
-    console.warn('Error writing log for ' + device.alias + ' [' + device.deviceId + ']', err);
+    console.warn('Error writing log for ' + device.alias + ' [' + device.id + ']', err);
   }
 }
 
@@ -83,7 +83,7 @@ function log(device) {
       pw: (('power_mw' in response) ? (response.power_mw / 1000) : response.power)
     }
 
-    let filePath = getLogPath(device.deviceId);
+    let filePath = getLogPath(device.id);
 
     getLogEntries(filePath, (entries) => {
       entries.push(logEntry)
@@ -92,18 +92,18 @@ function log(device) {
       entries.splice(0, entries.length - maxLogEntries);
 
       writeLog(filePath, entries);
-      dataBroadcaster.broadcastNewLogEntry(device.deviceId, logEntry);
+      dataBroadcaster.broadcastNewLogEntry(device.id, logEntry);
     })
 
   });
 }
 
-function getLogPath(deviceId) {
-  return path.join(logDirPath, deviceId + '-log.json');
+function getLogPath(plugId) {
+  return path.join(logDirPath, plugId + '-log.json');
 }
 
-function getLogEntriesForDevice(deviceId, callback) {
-  return getLogEntries(getLogPath(deviceId), callback);
+function getLogEntriesForDevice(plugId, callback) {
+  return getLogEntries(getLogPath(plugId), callback);
 }
 
 module.exports = {
