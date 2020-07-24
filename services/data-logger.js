@@ -67,7 +67,14 @@ function getLogEntries(filePath, callback) {
           callback([]);
         }
         else {
-          callback(JSON.parse(data));
+          let logData = [];
+          try {
+            logData = JSON.parse(data);
+          }
+          catch (err) {
+            console.warn('Error reading log for ' + device.alias + ' [' + device.id + ']', err);
+          }
+          callback(logData);
         }
       });
     }

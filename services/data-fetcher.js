@@ -170,7 +170,7 @@ function fetchPowerState() {
         }
 
         if (powerState == -1) {
-          console.log("Failed to get power state for device " + plugId);
+          console.warn("Failed to get power state for device " + plugId);
           powerState = 0;
         }
     
